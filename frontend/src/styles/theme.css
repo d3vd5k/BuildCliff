@@ -1,0 +1,94 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* surfaces */
+  --bg:            #0A0E14;   /* app background, near-black navy */
+  --surface-1:     #10151D;   /* cards, panels */
+  --surface-2:     #161C26;   /* hover, inputs, table header */
+  --surface-3:     #1D2530;   /* raised / selected */
+  --border:        #232C3A;
+  --border-strong: #324055;
+
+  /* text */
+  --text:          #E6EDF3;
+  --text-muted:    #8B98A9;
+  --text-faint:    #5B6779;
+
+  /* brand accent (cyan, "terminal cursor") */
+  --accent:        #22D3EE;
+  --accent-soft:   rgba(34, 211, 238, 0.12);
+
+  /* semantic */
+  --danger:        #FF5C5C;   /* cliff, regression, slow step */
+  --danger-soft:   rgba(255, 92, 92, 0.14);
+  --success:       #3DDC97;   /* recovered, positive reason chips, "clean" */
+  --success-soft:  rgba(61, 220, 151, 0.12);
+  --warning:       #F5B544;   /* medium confidence, negative reason chips */
+  --warning-soft:  rgba(245, 181, 68, 0.12);
+
+  /* step palette (fixed order = STEP_ORDER) */
+  --step-checkout: #6B7A90;   /* slate */
+  --step-install:  #22D3EE;   /* cyan */
+  --step-build:    #818CF8;   /* indigo */
+  --step-test:     #3DDC97;   /* green */
+  --step-deploy:   #F5B544;   /* amber */
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.5;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular nums for all JetBrains Mono elements */
+code, pre, .font-mono, [data-mono="true"] {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom Card styling */
+.cliff-card {
+  background-color: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+/* Culprit Panel glow */
+.culprit-glow {
+  box-shadow: 0 0 0 1px var(--danger-soft), 0 0 40px -10px rgba(255, 92, 92, 0.35);
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
