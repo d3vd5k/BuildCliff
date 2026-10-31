@@ -4,6 +4,7 @@ import { healthRouter } from './routes/health.js';
 import { ingestRouter } from './routes/ingest.js';
 import { runsRouter } from './routes/runs.js';
 import { projectsRouter } from './routes/projects.js';
+import { streamRouter } from './routes/stream.js';
 
 export function createApp() {
   const app = express();
@@ -15,6 +16,7 @@ export function createApp() {
   app.use('/api/ingest', ingestRouter);
   app.use('/api/runs', runsRouter);
   app.use('/api/projects', projectsRouter);
+  app.use('/api/stream', streamRouter);
 
   // Centralized error shape (contract section 4.1)
   app.use((req, res) => {

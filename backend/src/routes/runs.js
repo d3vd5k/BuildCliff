@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../db/index.js';
 import { sendError } from '../utils/errors.js';
+import { formatRun } from '../utils/formatters.js';
 import {
   DEMO_PROJECT_ID,
   DEFAULT_BRANCH,
@@ -9,23 +10,6 @@ import {
 } from '@buildcliff/shared';
 
 export const runsRouter = Router();
-
-/** Format a run document for the API response (contract section 4.3). */
-function formatRun(run) {
-  return {
-    run_id: run.run_id,
-    commit_sha: run.commit_sha,
-    status: run.status,
-    started_at: run.started_at instanceof Date ? run.started_at.toISOString() : run.started_at,
-    total_ms: run.total_ms,
-    demo_replay: run.demo_replay ?? false,
-    steps: (run.steps || []).map((s) => ({
-      name: s.name,
-      duration_ms: s.duration_ms,
-      status: s.status || 'success',
-    })),
-  };
-}
 
 // GET /api/runs?project_id=demo-app&branch=main&since=...&limit=200
 // Returns runs in ascending started_at order (oldest first), including failed runs.

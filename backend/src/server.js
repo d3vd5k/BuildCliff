@@ -1,9 +1,11 @@
 import { createApp } from './app.js';
 import { connect, close } from './db/index.js';
+import { startChangeStreams } from './services/streamService.js';
 import { config } from './config/index.js';
 
 async function main() {
   await connect();
+  startChangeStreams();
   const app = createApp();
   app.listen(config.port, () => {
     console.log(`BuildCliff server running on http://localhost:${config.port}/api`);
