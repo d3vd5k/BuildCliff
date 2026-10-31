@@ -1,0 +1,109 @@
+{
+  "project_id": "demo-app",
+  "computed_at": "2026-10-31T09:58:13Z",
+  "count": 6,
+  "impacts": [
+    {
+      "impact_id": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6:puppeteer",
+      "dep": "puppeteer",
+      "from": "21.0.0",
+      "to": "22.0.0",
+      "commit_sha": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6",
+      "step": "install",
+      "before_ms": 70000,
+      "after_ms": 270000,
+      "delta_ms": 200000,
+      "delta_pct": 285.7,
+      "runs_compared": {
+        "before": 10,
+        "after": 5
+      },
+      "finding_id": "demo-app:main:install:run_0116"
+    },
+    {
+      "impact_id": "7be21c90d4a85f3e6b1c0d92a47e8f35b6c1d0e7:webpack",
+      "dep": "webpack",
+      "from": "5.95.0",
+      "to": "5.96.0",
+      "commit_sha": "7be21c90d4a85f3e6b1c0d92a47e8f35b6c1d0e7",
+      "step": "build",
+      "before_ms": 65000,
+      "after_ms": 95000,
+      "delta_ms": 30000,
+      "delta_pct": 46.2,
+      "runs_compared": {
+        "before": 10,
+        "after": 5
+      },
+      "finding_id": "demo-app:main:build:run_0071"
+    },
+    {
+      "impact_id": "2fa719c580e3b61d8a490f2c37ed1b650a9c84d2:vitest",
+      "dep": "vitest",
+      "from": "2.0.5",
+      "to": "2.1.0",
+      "commit_sha": "2fa719c580e3b61d8a490f2c37ed1b650a9c84d2",
+      "step": "test",
+      "before_ms": 105000,
+      "after_ms": 120000,
+      "delta_ms": 15000,
+      "delta_pct": 14.3,
+      "runs_compared": {
+        "before": 10,
+        "after": 5
+      },
+      "finding_id": null
+    },
+    {
+      "impact_id": "4b60ac3e9f2718d056c1e4b7a08f329d6c5e719a:typescript",
+      "dep": "typescript",
+      "from": "5.5.4",
+      "to": "5.6.2",
+      "commit_sha": "4b60ac3e9f2718d056c1e4b7a08f329d6c5e719a",
+      "step": "build",
+      "before_ms": 55000,
+      "after_ms": 65000,
+      "delta_ms": 10000,
+      "delta_pct": 18.2,
+      "runs_compared": {
+        "before": 10,
+        "after": 5
+      },
+      "finding_id": null
+    },
+    {
+      "impact_id": "6c25d3a7b9e140f85d21c6a9e0f7b3d4a815c062:lodash",
+      "dep": "lodash",
+      "from": "4.17.20",
+      "to": "4.17.21",
+      "commit_sha": "6c25d3a7b9e140f85d21c6a9e0f7b3d4a815c062",
+      "step": "install",
+      "before_ms": 69500,
+      "after_ms": 70000,
+      "delta_ms": 500,
+      "delta_pct": 0.7,
+      "runs_compared": {
+        "before": 10,
+        "after": 5
+      },
+      "finding_id": null
+    },
+    {
+      "impact_id": "8e1c5b340fd7a290c86e12b53d6f094a7c2e18b5:eslint",
+      "dep": "eslint",
+      "from": "9.10.0",
+      "to": "9.11.0",
+      "commit_sha": "8e1c5b340fd7a290c86e12b53d6f094a7c2e18b5",
+      "step": "test",
+      "before_ms": 120400,
+      "after_ms": 120000,
+      "delta_ms": -400,
+      "delta_pct": -0.3,
+      "runs_compared": {
+        "before": 10,
+        "after": 5
+      },
+      "finding_id": null
+    }
+  ]
+}

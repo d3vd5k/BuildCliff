@@ -1,0 +1,17 @@
+{
+  "name": "buildcliff",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "prototype:engine": "node backend/scripts/prototype-engine.mjs",
+    "test:engine": "node --test tests/engine/*.test.mjs"
+  },
+  "dependencies": {
+    "mongodb": "^7.8.0"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0"
+  }
+}

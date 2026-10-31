@@ -12,20 +12,103 @@
 - [ ] Commit a mock `finding.json`, `compare.json` and `dependency_impacts.json` to `/mocks` so C can start immediately
 
 ## Hour 0.5 to 1.5: Prototype on stub data
-- [ ] Do not wait for A: write a quick throwaway generator or use A's early sample for 1 step
-- [ ] Prototype the detector pipeline in the Mongo shell or a script
-- [ ] Draft the aggregation for the dependency impact table (the heaviest pipeline)
+- [x] Do not wait for A: write a quick throwaway generator or use A's early sample for 1 step
+- [x] Prototype the detector pipeline in the Mongo shell or a script
+- [x] Draft the aggregation for the dependency impact table (the heaviest pipeline)
+
+**Verified prototype:** `npm run prototype:engine` runs
+`backend/scripts/prototype-engine.mjs` against its own disposable MongoDB 8.0.17
+process. Run `npm ci` first; the first execution downloads the MongoDB binary.
+Fixtures use fixed timestamps and deterministic jitter, independently of A's
+seeder, Atlas, ingest API, and the LLM.
+
+- Detector: no qualifying split after 0–4 successful slow runs; the fifth
+  confirms the first slow run, with medians `70000 -> 270000 ms`.
+  Seeded ±10% jitter, isolated spikes, failed/skipped steps, branch isolation,
+  and below-threshold shifts do not confirm a cliff.
+- Dependency impacts: six rows measured through `$lookup`, `$setWindowFields`,
+  and `$merge`, including two zero-impact bumps and a `-30000 ms` speedup.
+  Repeated/concurrent rebuilds preserve measurements; incomplete windows and
+  deleted commits remove stale rows.
+- Fixed an exposed boundary bug: an unbuilt commit could borrow unrelated
+  default-branch runs through a timestamp fallback. Measurements now require
+  an actual default-branch build of the commit or a proven descendant.
+- Targeted verification:
+  `node --test tests/engine/detection.test.mjs tests/engine/impacts.test.mjs`
+  passed all four tests, including the unbuilt/descendant commit regression.
+
+Step 2 is complete. This prototype is independent of A's real seed/ingest path
+and does not replace that integration.
 
 ## Hour 1.5 to 3.5: Change-point detector
-- [ ] Pull successful runs per project, branch and step ordered by time (exclude failed runs)
-- [ ] Use `$unwind` on `steps` and `$setWindowFields` for rolling medians
-- [ ] Compare the median of the previous 10 runs with the median of the next 5
-- [ ] Flag a change point when all hold: jump >= 25% and >= 20 s, new window minimum above old window p75, shift persists across all 5 runs
-- [ ] Report the earliest qualifying run as the cliff; compute `delta_ms`
-- [ ] Do not fire a finding before 5 slow runs exist (needed for replay timing)
+- [x] Pull successful runs per project, branch and step ordered by time (exclude failed runs)
+- [x] Use `$unwind` on `steps` and `$setWindowFields` for rolling medians
+- [x] Compare the median of the previous 10 runs with the median of the next 5
+- [x] Flag a change point when all hold: jump >= 25% and >= 20 s, new window minimum above old window p75, shift persists across all 5 runs
+- [x] Report the earliest qualifying run as the cliff; compute `delta_ms`
+- [x] Do not fire a finding before 5 slow runs exist (needed for replay timing)
 - [ ] Tune thresholds on the seed: the planted regressions are found, no false positives on normal jitter
-- [ ] Write findings to the `findings` collection; make reruns idempotent (no duplicate findings)
-- [ ] Expose `detect(project)` as a function for A to call after each ingest
+- [x] Write findings to the `findings` collection; make reruns idempotent (no duplicate findings)
+- [x] Expose `detect(project)` as a function for A to call after each ingest
+
+**Step 3 detector implementation is verified; real-seed tuning remains pending.**
+A's seed generator and accepted-run handler are not present in the repository.
+The thresholds remain the contract's 25% and 20000 ms; synthetic checks are not
+being presented as validation against A's planted events.
+
+Verified behavior:
+- A noisy plateau cannot create a second cliff merely because a rolling
+  baseline still straddles the original shift. During that overlap, a distinct
+  cliff must also clear the same jump thresholds against the prior confirmed
+  plateau. A genuinely larger subsequent shift remains detectable.
+- Eligibility uses exact medians. Published millisecond values are rounded once,
+  with `delta_ms = after_ms - before_ms` and percentages/cost based on those
+  published values.
+- Successful step windows remain isolated across projects/branches/steps,
+  including out-of-order inserts and tied timestamps.
+- Same-project calls queue rather than drop work arriving during detection.
+  A unique `finding_id` index protects concurrent engine instances.
+- `npm run test:engine` passed all 33 tests. A separate disposable MongoDB/HTTP
+  smoke verified clean responses through run four, one persisted finding after
+  run five, an independent later cliff, repeat/restart idempotency, emitted
+  finding events, and resolution after five recovered runs. The smoke did not
+  exercise A's missing ingest API or SSE transport; its temporary script was
+  removed.
+
+### Ingest hook handoff to A
+
+Create one engine instance after connecting MongoDB. Use A's shared database
+handle and `emit(eventName, data)` publisher:
+
+```js
+import { createEngine } from './backend/src/engine/index.mjs';
+
+const engine = createEngine({ db: getDb(), emit });
+```
+
+Inside A's accepted-run handler, call the hook **after successful persistence**,
+without waiting before sending the ingest response. Illustrative Node HTTP code:
+
+```js
+response.writeHead(201, { 'content-type': 'application/json' });
+response.end(JSON.stringify(accepted));
+
+void engine.detect(run.project_id).catch(error => {
+  console.error('Detection failed', { project_id: run.project_id, error });
+});
+```
+
+Do not schedule analysis for rejected or duplicate submissions. `detect` returns
+`{ created, updated }`: inserted findings and status updates, respectively.
+`finding.created` carries the initial finding (`llm` may be null);
+`finding.updated` carries explanation/status changes. A remains responsible for
+SSE delivery and should avoid publishing the same mutation twice through both a
+change-stream observer and this direct emitter.
+
+This is an in-process hook, not a durable worker. A crash can interrupt analysis;
+a later call rescans history. The existing hook also awaits explanation and
+impact work, so subsequent same-project calls may queue behind it. No new queue
+service, provider behavior, or scoring policy was introduced in Step 3.
 
 ## Hour 3.5 to 5: Attribution and confidence
 - [ ] Suspect range: commits between the last good run's SHA and the first bad run's SHA

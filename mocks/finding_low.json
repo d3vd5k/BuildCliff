@@ -1,0 +1,143 @@
+{
+  "finding_id": "demo-app:main:build:run_0071",
+  "project_id": "demo-app",
+  "branch": "main",
+  "step": "build",
+  "status": "active",
+  "detected_at": "2026-10-30T12:30:00Z",
+  "demo_replay": false,
+  "change_point": {
+    "run_id": "run_0071",
+    "started_at": "2026-10-30T12:00:00Z",
+    "commit_sha": "e3b1f0798a264cd5b087ea4c9d6f132be5a08c71"
+  },
+  "last_good_run_id": "run_0070",
+  "before_ms": 65000,
+  "after_ms": 95000,
+  "delta_ms": 30000,
+  "delta_pct": 46.2,
+  "runs_before": 10,
+  "runs_after": 5,
+  "breakdown": {
+    "before_ms": {
+      "checkout": 8000,
+      "install": 70000,
+      "build": 65000,
+      "test": 120000,
+      "deploy": 30000
+    },
+    "after_ms": {
+      "checkout": 8000,
+      "install": 70000,
+      "build": 95000,
+      "test": 120000,
+      "deploy": 30000
+    }
+  },
+  "commits_in_range": 3,
+  "culprit_sha": "7be21c90d4a85f3e6b1c0d92a47e8f35b6c1d0e7",
+  "suspects": [
+    {
+      "rank": 1,
+      "sha": "7be21c90d4a85f3e6b1c0d92a47e8f35b6c1d0e7",
+      "score": 30,
+      "author": "Alex Chen",
+      "message": "Update webpack build tooling",
+      "committed_at": "2026-10-30T11:48:00Z",
+      "dep_changes": [
+        {
+          "name": "webpack",
+          "from": "5.95.0",
+          "to": "5.96.0"
+        }
+      ],
+      "reasons": [
+        {
+          "code": "DEP_BUMPED",
+          "label": "webpack 5.95.0 -> 5.96.0 matches build",
+          "weight": 30
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "sha": "c04d8e7a19b3f6250e8d1a7c94b2f06d3a58e1c9",
+      "score": 30,
+      "author": "Morgan Lee",
+      "message": "Adjust production build pipeline",
+      "committed_at": "2026-10-30T11:50:00Z",
+      "dep_changes": [],
+      "reasons": [
+        {
+          "code": "CI_CONFIG_CHANGED",
+          "label": ".github/workflows/build.yml changed",
+          "weight": 30
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "sha": "e3b1f0798a264cd5b087ea4c9d6f132be5a08c71",
+      "score": 30,
+      "author": "Sam Rivera",
+      "message": "Update build image",
+      "committed_at": "2026-10-30T11:52:00Z",
+      "dep_changes": [],
+      "reasons": [
+        {
+          "code": "DOCKERFILE_CHANGED",
+          "label": "Dockerfile changed",
+          "weight": 30
+        }
+      ]
+    }
+  ],
+  "confidence": {
+    "level": "Low",
+    "score": 35,
+    "jump_score": 100,
+    "attribution_score": 0,
+    "reasons": [
+      {
+        "code": "JUMP_PERSISTS",
+        "label": "Slow in 5 of 5 runs after the change",
+        "polarity": "positive"
+      },
+      {
+        "code": "CLEAN_SEPARATION",
+        "label": "Slowest baseline run is faster than the fastest new run",
+        "polarity": "positive"
+      },
+      {
+        "code": "MULTIPLE_CANDIDATES",
+        "label": "3 commits between the last good and first slow run",
+        "polarity": "negative"
+      },
+      {
+        "code": "SMALL_SCORE_MARGIN",
+        "label": "Top two suspects score within 0 points",
+        "polarity": "negative"
+      }
+    ]
+  },
+  "cost": {
+    "runs_per_week": 70,
+    "extra_ci_hours_per_week": 0.58,
+    "engineer_wait_hours_per_week": 0.29,
+    "engineer_cost_usd_per_week": 17.5,
+    "runner_cost_usd_per_week": 0.28,
+    "total_cost_usd_per_week": 17.78,
+    "recovered_hours_per_week_if_reverted": 0.58,
+    "assumptions": {
+      "runner_cost_per_min_usd": 0.008,
+      "engineer_cost_per_hour_usd": 60,
+      "blocking_fraction": 0.5
+    }
+  },
+  "llm": {
+    "suggested_fix": "Do not assume the top-ranked commit caused this change. Compare the three candidates in isolated build reruns, starting with a controlled dependency revert and then the CI and image changes; inspect cache hits in each run.",
+    "channel_summary": "build increased from 65s to 95s (+30s). Three equally ranked commits remain plausible; attribution is Low confidence and needs controlled reruns.",
+    "source": "template",
+    "generated_at": "2026-10-30T12:30:02Z"
+  }
+}
