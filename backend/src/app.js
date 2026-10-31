@@ -5,6 +5,9 @@ import { ingestRouter } from './routes/ingest.js';
 import { runsRouter } from './routes/runs.js';
 import { projectsRouter } from './routes/projects.js';
 import { streamRouter } from './routes/stream.js';
+import { demoRouter } from './routes/demo.js';
+import { createAnalyticsHandler } from './routes/analytics.mjs';
+import { getEngine } from './engine/index.js';
 
 export function createApp() {
   const app = express();
@@ -17,6 +20,26 @@ export function createApp() {
   app.use('/api/runs', runsRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api/stream', streamRouter);
+  app.use('/api/demo', demoRouter);
+
+  // Analytics endpoints owned by B: /api/findings, /api/compare, /api/dependency-impacts
+  const analyticsHandler = createAnalyticsHandler({
+    listFindings: (...args) => getEngine().listFindings(...args),
+    latestFinding: (...args) => getEngine().latestFinding(...args),
+    getFinding: (...args) => getEngine().getFinding(...args),
+    compare: (...args) => getEngine().compare(...args),
+    listImpacts: (...args) => getEngine().listImpacts(...args),
+  });
+
+  app.use(async (req, res, next) => {
+    try {
+      const handled = await analyticsHandler(req, res);
+      if (handled) return;
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // Centralized error shape (contract section 4.1)
   app.use((req, res) => {

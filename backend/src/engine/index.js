@@ -1,10 +1,29 @@
-// Engine interface (contract section 6). Member B implements these; Member A
-// calls them fire-and-forget after ingest, assumptions changes and reset.
-// Every function must be safe to call repeatedly and concurrently.
-// These stubs log and no-op so A's ingest/replay/demo flow works end-to-end
-// before B lands the real detector. B replaces the bodies (not the signatures).
+// Engine interface (contract section 6).
+// Wires Member B's detection engine implementation (index.mjs)
+// to Member A's shared MongoDB database handle and SSE stream emitter.
 
-const log = (...args) => console.log('[engine]', ...args);
+import { getDb } from '../db/index.js';
+import { emit } from '../services/streamService.js';
+import { createEngine } from './index.mjs';
+
+let engineInstance = null;
+let boundDb = null;
+
+/**
+ * Returns the singleton engine instance bound to the active database connection
+ * and SSE emitter. If the database connection was closed or changed, rebinds.
+ */
+export function getEngine() {
+  const db = getDb();
+  if (!engineInstance || boundDb !== db) {
+    boundDb = db;
+    engineInstance = createEngine({
+      db,
+      emit: (eventName, data, dataProjectId) => emit(eventName, data, dataProjectId),
+    });
+  }
+  return engineInstance;
+}
 
 /**
  * Runs change-point detection + attribution for a project.
@@ -12,8 +31,7 @@ const log = (...args) => console.log('[engine]', ...args);
  * Called by A after each accepted run.
  */
 export async function detect(projectId) {
-  log(`detect("${projectId}") — stub, not yet implemented by B`);
-  return { created: 0, updated: 0 };
+  return getEngine().detect(projectId);
 }
 
 /**
@@ -22,8 +40,8 @@ export async function detect(projectId) {
  * Called by A after PATCH /projects/:id/assumptions.
  */
 export async function recomputeCosts(projectId) {
-  log(`recomputeCosts("${projectId}") — stub, not yet implemented by B`);
-  return { updated: 0 };
+  const updated = await getEngine().recomputeCosts(projectId);
+  return { updated };
 }
 
 /**
@@ -32,6 +50,22 @@ export async function recomputeCosts(projectId) {
  * Called by A after accepted commits and after demo reset.
  */
 export async function recomputeImpacts(projectId) {
-  log(`recomputeImpacts("${projectId}") — stub, not yet implemented by B`);
-  return { computed: 0 };
+  const computed = await getEngine().recomputeImpacts(projectId);
+  return { computed };
+}
+
+/**
+ * Resumes pending explanations at startup or for a project.
+ * Returns number of queued tasks.
+ */
+export async function resumeExplanations(projectId) {
+  return getEngine().resumeExplanations(projectId);
+}
+
+/**
+ * Drains all in-flight detection and explanation tasks during graceful shutdown.
+ */
+export async function drainExplanations() {
+  if (!engineInstance) return;
+  return engineInstance.drainExplanations();
 }

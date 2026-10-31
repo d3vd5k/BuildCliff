@@ -3,7 +3,8 @@ import { EngineError, invalid } from '../engine/errors.mjs';
 // Mount before A's not-found handler: if (await analytics(req, res)) return;
 export function createAnalyticsHandler(engine) {
   return async function handleAnalytics(request, response) {
-    const url = new URL(request.url, 'http://localhost');
+    const rawUrl = request.originalUrl || request.url;
+    const url = new URL(rawUrl, 'http://localhost');
     const path = url.pathname;
     const known = path === '/api/findings' || path.startsWith('/api/findings/')
       || path === '/api/compare' || path === '/api/dependency-impacts';
