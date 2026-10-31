@@ -33,3 +33,7 @@ export async function close() {
   client = null;
   db = null;
 }
+
+export function setDbForTesting(mockDb) {
+  db = mockDb;
+}
