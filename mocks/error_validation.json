@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Missing required field: commit_sha",
+    "field": "commit_sha"
+  }
+}

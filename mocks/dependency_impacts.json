@@ -1,0 +1,91 @@
+{
+  "project_id": "demo-app",
+  "computed_at": "2026-10-31T09:58:13Z",
+  "count": 6,
+  "impacts": [
+    {
+      "impact_id": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6:puppeteer",
+      "dep": "puppeteer",
+      "from": "21.0.0",
+      "to": "22.0.0",
+      "commit_sha": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6",
+      "step": "install",
+      "before_ms": 70000,
+      "after_ms": 270000,
+      "delta_ms": 200000,
+      "delta_pct": 285.7,
+      "runs_compared": { "before": 10, "after": 5 },
+      "finding_id": "demo-app:main:install:run_0116"
+    },
+    {
+      "impact_id": "5d10e2c7b9a4f8036c1e7d2a94b0f5e83c6a1d72:webpack",
+      "dep": "webpack",
+      "from": "5.88.0",
+      "to": "5.90.0",
+      "commit_sha": "5d10e2c7b9a4f8036c1e7d2a94b0f5e83c6a1d72",
+      "step": "build",
+      "before_ms": 95000,
+      "after_ms": 135000,
+      "delta_ms": 40000,
+      "delta_pct": 42.1,
+      "runs_compared": { "before": 10, "after": 5 },
+      "finding_id": "demo-app:main:build:run_0042"
+    },
+    {
+      "impact_id": "8f2a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a:eslint",
+      "dep": "eslint",
+      "from": "8.45.0",
+      "to": "8.50.0",
+      "commit_sha": "8f2a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a",
+      "step": "test",
+      "before_ms": 120000,
+      "after_ms": 122000,
+      "delta_ms": 2000,
+      "delta_pct": 1.7,
+      "runs_compared": { "before": 8, "after": 5 },
+      "finding_id": null
+    },
+    {
+      "impact_id": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0:lodash",
+      "dep": "lodash",
+      "from": "4.17.20",
+      "to": "4.17.21",
+      "commit_sha": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0",
+      "step": "build",
+      "before_ms": 95000,
+      "after_ms": 94000,
+      "delta_ms": -1000,
+      "delta_pct": -1.1,
+      "runs_compared": { "before": 10, "after": 6 },
+      "finding_id": null
+    },
+    {
+      "impact_id": "2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b:typescript",
+      "dep": "typescript",
+      "from": "5.2.0",
+      "to": "5.3.0",
+      "commit_sha": "2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+      "step": "build",
+      "before_ms": 95000,
+      "after_ms": 98500,
+      "delta_ms": 3500,
+      "delta_pct": 3.7,
+      "runs_compared": { "before": 9, "after": 5 },
+      "finding_id": null
+    },
+    {
+      "impact_id": "3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b3c:axios",
+      "dep": "axios",
+      "from": "1.5.0",
+      "to": "1.6.0",
+      "commit_sha": "3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b3c",
+      "step": "test",
+      "before_ms": 120000,
+      "after_ms": 119500,
+      "delta_ms": -500,
+      "delta_pct": -0.4,
+      "runs_compared": { "before": 10, "after": 5 },
+      "finding_id": null
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "finding_id": "demo-app:main:install:run_0116",
+  "project_id": "demo-app",
+  "branch": "main",
+  "step": "install",
+  "status": "active",
+  "detected_at": "2026-10-31T09:58:12Z",
+  "demo_replay": true,
+
+  "change_point": {
+    "run_id": "run_0116",
+    "started_at": "2026-10-31T09:41:03Z",
+    "commit_sha": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6"
+  },
+  "last_good_run_id": "run_0115",
+
+  "before_ms": 70000,
+  "after_ms": 270000,
+  "delta_ms": 200000,
+  "delta_pct": 285.7,
+  "runs_before": 10,
+  "runs_after": 5,
+
+  "breakdown": {
+    "before_ms": { "checkout": 8000, "install": 70000, "build": 95000, "test": 120000, "deploy": 30000 },
+    "after_ms":  { "checkout": 8100, "install": 270000, "build": 96000, "test": 121000, "deploy": 30000 }
+  },
+
+  "commits_in_range": 1,
+  "culprit_sha": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6",
+  "suspects": [
+    {
+      "rank": 1,
+      "sha": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6",
+      "score": 92,
+      "author": "Priya Shah",
+      "message": "Bump puppeteer to 22.0.0",
+      "committed_at": "2026-10-31T09:38:40Z",
+      "dep_changes": [ { "name": "puppeteer", "from": "21.0.0", "to": "22.0.0" } ],
+      "reasons": [
+        { "code": "LOCKFILE_CHANGED",     "label": "package-lock.json changed", "weight": 40 },
+        { "code": "DEP_BUMPED",            "label": "puppeteer 21.0.0 -> 22.0.0", "weight": 30 },
+        { "code": "SOLE_COMMIT_IN_RANGE",  "label": "Only commit between the last good and first slow run", "weight": 22 }
+      ]
+    }
+  ],
+
+  "confidence": {
+    "level": "High",
+    "score": 91,
+    "jump_score": 95,
+    "attribution_score": 88,
+    "reasons": [
+      { "code": "JUMP_PERSISTS",    "label": "Slow in 5 of 5 runs after the change", "polarity": "positive" },
+      { "code": "CLEAN_SEPARATION", "label": "Slowest baseline run is faster than the fastest new run", "polarity": "positive" },
+      { "code": "SOLE_COMMIT",      "label": "Only one commit in range", "polarity": "positive" },
+      { "code": "DEP_MATCHES_STEP", "label": "Dependency change matches the install step", "polarity": "positive" }
+    ]
+  },
+
+  "cost": {
+    "runs_per_week": 70,
+    "extra_ci_hours_per_week": 3.89,
+    "engineer_wait_hours_per_week": 1.94,
+    "engineer_cost_usd_per_week": 116.67,
+    "runner_cost_usd_per_week": 1.87,
+    "total_cost_usd_per_week": 118.54,
+    "recovered_hours_per_week_if_reverted": 3.89,
+    "assumptions": {
+      "runner_cost_per_min_usd": 0.008,
+      "engineer_cost_per_hour_usd": 60,
+      "blocking_fraction": 0.5
+    }
+  },
+
+  "llm": {
+    "suggested_fix": "Pin puppeteer to 21.x or set PUPPETEER_SKIP_DOWNLOAD and cache the browser binary between runs.",
+    "channel_summary": "install went 1m10s -> 4m30s (+3m20s) after a3f9c1d, which bumped puppeteer 21.0.0 -> 22.0.0.",
+    "source": "llm",
+    "generated_at": "2026-10-31T09:58:14Z"
+  }
+}
