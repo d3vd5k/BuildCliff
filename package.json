@@ -1,25 +1,18 @@
 {
   "name": "buildcliff",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
+  "workspaces": ["shared", "backend", "cli"],
   "scripts": {
-    "prototype:engine": "node --env-file-if-exists=.env backend/scripts/prototype-engine.mjs",
-    "test:attribution": "node --test tests/engine/attribution*.test.mjs",
-    "verify:attribution": "node --env-file-if-exists=.env backend/scripts/verify-attribution.mjs",
-    "test:analytics": "node --test tests/engine/analytics*.test.mjs",
-    "verify:analytics": "node --env-file-if-exists=.env backend/scripts/verify-analytics.mjs",
-    "test:impacts": "node --env-file-if-exists=.env --test tests/engine/impacts.test.mjs",
-    "verify:impacts": "node --env-file-if-exists=.env backend/scripts/verify-impacts.mjs",
-    "test:llm": "node --test tests/engine/llm.test.mjs tests/engine/explanations.test.mjs",
-    "verify:llm": "node --env-file-if-exists=.env backend/scripts/verify-llm.mjs",
-    "verify:explanations": "node --env-file-if-exists=.env backend/scripts/verify-explanations.mjs",
-    "test:engine": "node --env-file-if-exists=.env --test tests/engine/*.test.mjs"
+    "seed": "node backend/src/seed/index.js",
+    "schema": "node backend/src/db/schema.js",
+    "start": "node backend/src/server.js",
+    "dev": "node --watch backend/src/server.js",
+    "cli": "node cli/src/index.js",
+    "test": "node --test"
   },
-  "dependencies": {
-    "mongodb": "^7.8.0"
+  "engines": {
+    "node": ">=18"
   }
 }

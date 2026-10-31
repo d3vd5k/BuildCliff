@@ -1,0 +1,11 @@
+{
+  "project_id": "demo-app",
+  "name": "Demo App",
+  "default_branch": "main",
+  "assumptions": {
+    "runner_cost_per_min_usd": 0.008,
+    "engineer_cost_per_hour_usd": 60,
+    "blocking_fraction": 0.5
+  },
+  "runs_per_week": 70
+}

@@ -1,9 +1,14 @@
 {
+<<<<<<< HEAD
   "finding_id": "demo-app:main:build:run_0071",
+=======
+  "finding_id": "demo-app:main:build:run_0042",
+>>>>>>> origin/aayush/task1
   "project_id": "demo-app",
   "branch": "main",
   "step": "build",
   "status": "active",
+<<<<<<< HEAD
   "detected_at": "2026-10-30T12:30:00Z",
   "demo_replay": false,
   "change_point": {
@@ -34,12 +39,37 @@
       "deploy": 30000
     }
   },
+=======
+  "detected_at": "2026-10-20T14:22:05Z",
+  "demo_replay": false,
+
+  "change_point": {
+    "run_id": "run_0042",
+    "started_at": "2026-10-20T13:05:00Z",
+    "commit_sha": "7be21c90d4a85f3e6b1c0d92a47e8f35b6c1d0e7"
+  },
+  "last_good_run_id": "run_0041",
+
+  "before_ms": 95000,
+  "after_ms": 135000,
+  "delta_ms": 40000,
+  "delta_pct": 42.1,
+  "runs_before": 10,
+  "runs_after": 5,
+
+  "breakdown": {
+    "before_ms": { "checkout": 8000, "install": 70000, "build": 95000, "test": 120000, "deploy": 30000 },
+    "after_ms":  { "checkout": 8100, "install": 71000, "build": 135000, "test": 121000, "deploy": 30000 }
+  },
+
+>>>>>>> origin/aayush/task1
   "commits_in_range": 3,
   "culprit_sha": "7be21c90d4a85f3e6b1c0d92a47e8f35b6c1d0e7",
   "suspects": [
     {
       "rank": 1,
       "sha": "7be21c90d4a85f3e6b1c0d92a47e8f35b6c1d0e7",
+<<<<<<< HEAD
       "score": 30,
       "author": "Alex Chen",
       "message": "Update webpack build tooling",
@@ -57,11 +87,22 @@
           "label": "webpack 5.95.0 -> 5.96.0 matches build",
           "weight": 30
         }
+=======
+      "score": 48,
+      "author": "Marcus Lee",
+      "message": "Upgrade webpack config to cache busting",
+      "committed_at": "2026-10-20T12:58:00Z",
+      "dep_changes": [ { "name": "webpack", "from": "5.88.0", "to": "5.90.0" } ],
+      "reasons": [
+        { "code": "CI_CONFIG_CHANGED", "label": "webpack.config.js changed", "weight": 30 },
+        { "code": "DEP_BUMPED",         "label": "webpack 5.88.0 -> 5.90.0", "weight": 18 }
+>>>>>>> origin/aayush/task1
       ]
     },
     {
       "rank": 2,
       "sha": "c04d8e7a19b3f6250e8d1a7c94b2f06d3a58e1c9",
+<<<<<<< HEAD
       "score": 30,
       "author": "Morgan Lee",
       "message": "Adjust production build pipeline",
@@ -73,10 +114,21 @@
           "label": ".github/workflows/build.yml changed",
           "weight": 30
         }
+=======
+      "score": 44,
+      "author": "Priya Shah",
+      "message": "Refactor build scripts",
+      "committed_at": "2026-10-20T12:51:00Z",
+      "dep_changes": [],
+      "reasons": [
+        { "code": "STEP_RELATED_FILES", "label": "Changes in build-related files", "weight": 24 },
+        { "code": "LARGE_DIFF",          "label": "Large diff (+820 lines)", "weight": 20 }
+>>>>>>> origin/aayush/task1
       ]
     },
     {
       "rank": 3,
+<<<<<<< HEAD
       "sha": "e3b1f0798a264cd5b087ea4c9d6f132be5a08c71",
       "score": 30,
       "author": "Sam Rivera",
@@ -128,16 +180,59 @@
     "runner_cost_usd_per_week": 0.28,
     "total_cost_usd_per_week": 17.78,
     "recovered_hours_per_week_if_reverted": 0.58,
+=======
+      "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+      "score": 12,
+      "author": "Devon Ray",
+      "message": "Update README badges",
+      "committed_at": "2026-10-20T12:44:00Z",
+      "dep_changes": [],
+      "reasons": [
+        { "code": "LARGE_DIFF", "label": "Large diff (+340 lines)", "weight": 12 }
+      ]
+    }
+  ],
+
+  "confidence": {
+    "level": "Low",
+    "score": 34,
+    "jump_score": 70,
+    "attribution_score": 30,
+    "reasons": [
+      { "code": "JUMP_PERSISTS",       "label": "Slow in 5 of 5 runs after the change", "polarity": "positive" },
+      { "code": "MULTIPLE_CANDIDATES", "label": "3 commits between the last good and first slow run", "polarity": "negative" },
+      { "code": "SMALL_SCORE_MARGIN",  "label": "Top two suspects score within 4 points", "polarity": "negative" }
+    ]
+  },
+
+  "cost": {
+    "runs_per_week": 70,
+    "extra_ci_hours_per_week": 0.78,
+    "engineer_wait_hours_per_week": 0.39,
+    "engineer_cost_usd_per_week": 23.33,
+    "runner_cost_usd_per_week": 0.37,
+    "total_cost_usd_per_week": 23.70,
+    "recovered_hours_per_week_if_reverted": 0.78,
+>>>>>>> origin/aayush/task1
     "assumptions": {
       "runner_cost_per_min_usd": 0.008,
       "engineer_cost_per_hour_usd": 60,
       "blocking_fraction": 0.5
     }
   },
+<<<<<<< HEAD
   "llm": {
     "suggested_fix": "Do not assume the top-ranked commit caused this change. Compare the three candidates in isolated build reruns, starting with a controlled dependency revert and then the CI and image changes; inspect cache hits in each run.",
     "channel_summary": "build increased from 65s to 95s (+30s). Three equally ranked commits remain plausible; attribution is Low confidence and needs controlled reruns.",
     "source": "template",
     "generated_at": "2026-10-30T12:30:02Z"
+=======
+
+  "llm": {
+    "suggested_fix": "Three commits landed in the build window. Review the webpack config change and the build-script refactor; consider splitting the cache-busting change to isolate its impact.",
+    "channel_summary": "build went 1m35s -> 2m15s (+40s) but 3 commits landed in the window, so attribution is uncertain (Low).",
+    "source": "template",
+    "generated_at": "2026-10-20T14:22:10Z"
+>>>>>>> origin/aayush/task1
   }
 }

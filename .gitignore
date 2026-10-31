@@ -1,7 +1,14 @@
 node_modules/
 .env
+<<<<<<< HEAD
 .env.*
 !.env.example
 coverage/
 frontend/dist/
 *.log
+=======
+*.log
+dist/
+.DS_Store
+coverage/
+>>>>>>> origin/aayush/task1
