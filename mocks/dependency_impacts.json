@@ -18,6 +18,7 @@
         "before": 10,
         "after": 5
       },
+      "compare": { "a": "run_0115", "b": "run_0116" },
       "finding_id": "demo-app:main:install:run_0116"
     },
     {
@@ -35,6 +36,7 @@
         "before": 10,
         "after": 5
       },
+      "compare": { "a": "run_0070", "b": "run_0071" },
       "finding_id": "demo-app:main:build:run_0071"
     },
     {
@@ -52,6 +54,7 @@
         "before": 10,
         "after": 5
       },
+      "compare": { "a": "run_0050", "b": "run_0051" },
       "finding_id": null
     },
     {
@@ -69,6 +72,7 @@
         "before": 10,
         "after": 5
       },
+      "compare": { "a": "run_0030", "b": "run_0031" },
       "finding_id": null
     },
     {
@@ -86,6 +90,7 @@
         "before": 10,
         "after": 5
       },
+      "compare": { "a": "run_0015", "b": "run_0016" },
       "finding_id": null
     },
     {
@@ -103,6 +108,7 @@
         "before": 10,
         "after": 5
       },
+      "compare": { "a": "run_0090", "b": "run_0091" },
       "finding_id": null
     }
   ]

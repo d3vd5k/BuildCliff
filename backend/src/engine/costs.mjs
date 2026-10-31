@@ -56,13 +56,14 @@ export function createCosts({ db, emit = () => {} }) {
     let updated = 0;
     for (const finding of findings) {
       const cost = calculateCost(finding.delta_ms, runsPerWeek, currentProject.assumptions);
-      const result = await db.collection('findings').updateOne(
+      const updatedFinding = await db.collection('findings').findOneAndUpdate(
         { finding_id: finding.finding_id, project_id, status: 'active' },
         { $set: { cost } },
+        { returnDocument: 'after', projection: { _id: 0 } },
       );
-      if (result.matchedCount) {
+      if (updatedFinding) {
         updated += 1;
-        await emit('finding.updated', { ...finding, cost });
+        await emit('finding.updated', updatedFinding);
       }
     }
     return updated;

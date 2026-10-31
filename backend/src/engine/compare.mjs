@@ -29,6 +29,13 @@ function side(label, runIds, steps) {
   };
 }
 
+function runSide(run) {
+  // A single-run comparison shows what actually ran, including measured time
+  // from failed/skipped steps. Successful-only medians belong to finding mode.
+  return side(run.run_id, [run.run_id],
+    Object.fromEntries(run.steps.map(({ name, duration_ms }) => [name, duration_ms])));
+}
+
 function difference(a_ms, b_ms) {
   return { a_ms, b_ms, delta_ms: b_ms - a_ms, delta_pct: deltaPct(a_ms, b_ms) };
 }
@@ -91,8 +98,8 @@ export function createCompare({ db }) {
         commits = await commitsBetween(db, project_id, after.commit_sha, before.commit_sha);
       }
       return response(project_id, 'runs',
-        side(a, [a], breakdown([before])),
-        side(b, [b], breakdown([after])),
+        runSide(before),
+        runSide(after),
         commits,
       );
     }

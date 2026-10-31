@@ -1,4 +1,5 @@
 import { notFound } from './errors.mjs';
+import { BASELINE_WINDOW, CONFIRM_WINDOW } from './windows.mjs';
 
 // One shared database handle is used by the ingest hooks. Serialize rebuilds
 // across engine factories so a stale-row sweep cannot erase another rebuild.
@@ -71,8 +72,9 @@ function impactPipeline(project_id, branch, computed_at) {
               partitionBy: '$steps.name',
               sortBy: { started_at: 1, run_id: 1 },
               output: {
-                before: { $push: '$steps.duration_ms', window: { documents: [-10, -1] } },
-                after: { $push: '$steps.duration_ms', window: { documents: [0, 4] } },
+                before: { $push: '$steps.duration_ms', window: { documents: [-BASELINE_WINDOW, -1] } },
+                after: { $push: '$steps.duration_ms', window: { documents: [0, CONFIRM_WINDOW - 1] } },
+                before_run_id: { $last: '$run_id', window: { documents: [-BASELINE_WINDOW, -1] } },
               },
             },
           },
@@ -96,13 +98,14 @@ function impactPipeline(project_id, branch, computed_at) {
           // moving the anchor forward would manufacture a different comparison.
           { $group: { _id: '$steps.name', window: { $first: '$$ROOT' } } },
           { $replaceWith: '$window' },
-          { $match: { $expr: { $and: [{ $eq: [{ $size: '$before' }, 10] }, { $eq: [{ $size: '$after' }, 5] }] } } },
+          { $match: { $expr: { $and: [{ $eq: [{ $size: '$before' }, BASELINE_WINDOW] }, { $eq: [{ $size: '$after' }, CONFIRM_WINDOW] }] } } },
           {
             $project: {
               _id: 0,
               step: '$steps.name',
-              before_ms: medianExpression('$before', 10),
-              after_ms: medianExpression('$after', 5),
+              before_ms: medianExpression('$before', BASELINE_WINDOW),
+              after_ms: medianExpression('$after', CONFIRM_WINDOW),
+              compare: { a: '$before_run_id', b: '$run_id' },
             },
           },
           { $set: { delta_ms: { $subtract: ['$after_ms', '$before_ms'] } } },
@@ -120,9 +123,12 @@ function impactPipeline(project_id, branch, computed_at) {
         from: 'findings',
         let: { sha: '$sha', step: '$measurement.step' },
         pipeline: [
-          { $match: { project_id, branch, $expr: { $in: ['$$sha', { $ifNull: ['$suspects.sha', []] }] } } },
-          { $set: { same_step: { $eq: ['$step', '$$step'] }, active: { $eq: ['$status', 'active'] } } },
-          { $sort: { same_step: -1, active: -1, detected_at: -1, finding_id: 1 } },
+          { $match: { project_id, branch, $expr: { $and: [
+            { $eq: ['$step', '$$step'] },
+            { $in: ['$$sha', { $ifNull: ['$suspects.sha', []] }] },
+          ] } } },
+          { $set: { active: { $eq: ['$status', 'active'] } } },
+          { $sort: { active: -1, detected_at: -1, finding_id: 1 } },
           { $limit: 1 },
           { $project: { _id: 0, finding_id: 1 } },
         ],
@@ -146,10 +152,20 @@ function impactPipeline(project_id, branch, computed_at) {
           $cond: [
             { $eq: ['$measurement.before_ms', 0] },
             { $cond: [{ $eq: ['$measurement.after_ms', 0] }, 0, null] },
-            { $divide: [{ $floor: { $add: [{ $multiply: [{ $divide: ['$measurement.delta_ms', '$measurement.before_ms'] }, 1000] }, 0.5] } }, 10] },
+            { $let: {
+              vars: { tenths: { $multiply: [{ $divide: ['$measurement.delta_ms', '$measurement.before_ms'] }, 1000] } },
+              in: { $divide: [
+                { $multiply: [
+                  { $cond: [{ $lt: ['$$tenths', 0] }, -1, 1] },
+                  { $floor: { $add: [{ $abs: '$$tenths' }, 0.5] } },
+                ] },
+                10,
+              ] },
+            } },
           ],
         },
-        runs_compared: { $literal: { before: 10, after: 5 } },
+        runs_compared: { $literal: { before: BASELINE_WINDOW, after: CONFIRM_WINDOW } },
+        compare: '$measurement.compare',
         finding_id: { $ifNull: [{ $arrayElemAt: ['$linked_finding.finding_id', 0] }, null] },
         demo_replay: { $ifNull: ['$demo_replay', false] },
         computed_at: { $literal: computed_at },

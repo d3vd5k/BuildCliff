@@ -43,6 +43,21 @@
 - [ ] Test reset and replay at least 5 times in a row
 - [ ] **Handoff to C (by hour 5):** `/stream`, `/runs` and `/demo/*` working against real data
 
+**B handoff, contract v1.2:** use the shared Db handle when creating the engine.
+`detect(project_id)` already recomputes impacts after runs; call
+`recomputeImpacts(project_id)` after accepted commits and completed reset
+deletions. Rebuild each project's existing materialized rows once before
+serving the v1.2 impact table so all rows have `compare: {a, b}` targets.
+
+**B explanation handoff, contract v1.3:** after database startup, call
+`await engine.resumeExplanations()` to queue persisted null explanations.
+`detect()` no longer awaits the provider. During shutdown, stop accepting
+ingest, then `await engine.drainExplanations()` before closing MongoDB; handle
+its errors. Use a persistent Node process or the host's explicit background
+lifecycle support—do not assume a serverless response keeps work alive.
+The CLI must tolerate `finding.llm === null` (show pending text) without
+changing regression exit codes. A later `finding.updated` carries the result.
+
 ## Hour 5 to 7: Support integration
 - [ ] Help B wire the detector trigger and finding writes
 - [ ] Fix integration bugs raised by C

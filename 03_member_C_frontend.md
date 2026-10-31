@@ -33,6 +33,12 @@
 - [ ] **Cost block:** extra CI hours/week, engineer waiting cost and runner cost, with assumptions shown and editable (calls `PATCH /projects/:id/assumptions`)
 - [ ] **Handoff check (hour 5):** switch from mocks to the real API for runs, stream and findings
 
+**B explanation handoff, contract v1.3:** render the deterministic finding while
+`llm` is null, show an explanation-pending state, and replace it on
+`finding.updated`. Both `source: llm` and `source: template` contain usable
+text. Render it as advisory text, not executable commands or trusted HTML.
+Ranking/confidence never come from the model; do not infer them from its prose.
+
 ## Hour 6 to 7: Replay and revert preview
 - [ ] **Replay the cliff** button calling `POST /demo/replay`; disable while running, show progress
 - [ ] **Reset demo** button calling `POST /demo/reset`
@@ -41,9 +47,16 @@
 - [ ] Cost block updates to "reverting recovers ~X h/week" when the toggle is on
 
 ## Hour 7 to 8.5: Compare view and dependency table
-- [ ] **Compare view:** two stacked bars side by side, diff table (`a_ms`, `b_ms`, delta, pct), commit list with suspects flagged, dependency changes between the two
+- [ ] **Compare view:** two stacked bars side by side, diff table (`a_ms`, `b_ms`, `delta_ms`, `delta_pct`), commit list with suspects flagged, dependency changes between the two
 - [ ] Open from the finding (typical before vs after); allow clicking two timeline points to compare single runs
 - [ ] **Dependency impact table:** columns dependency, version change, step hit, delta time, runs compared; sortable by impact; near-zero rows visibly muted; each row links to its finding or compare view
+
+**B handoff, contract v1.2:** every impact row has `compare: {a, b}`. Prefer
+`finding_id` when present; otherwise request `/api/compare` with `project_id`,
+`branch=project.default_branch`, and those run IDs. The pair is not the full
+median window, so its delta can differ from the impact row under ordinary
+jitter. Keep near-zero/speedup rows and handle null percentages. A/B must
+rebuild existing impact rows before the v1.2 table is served.
 
 ## Hour 8.5 to 9: Polish
 - [ ] Empty state for a clean project ("no regression detected")

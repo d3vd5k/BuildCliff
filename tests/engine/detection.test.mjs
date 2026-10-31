@@ -1,20 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MongoClient } from 'mongodb';
-import { MongoMemoryReplSet } from 'mongodb-memory-server';
+import { atlasDatabase } from './helpers/atlas.mjs';
 import { createEngine } from '../../backend/src/engine/index.mjs';
 
 const assumptions = { runner_cost_per_min_usd: 0.008, engineer_cost_per_hour_usd: 60, blocking_fraction: 0.5 };
 const sha = n => n.toString(16).padStart(40, '0');
 
 async function database(t) {
-  let mongo;
-  const uri = process.env.MONGODB_URI ?? (mongo = await MongoMemoryReplSet.create({
-    binary: { version: '8.0.17' }, replSet: { count: 1 },
-  })).getUri();
-  const client = await MongoClient.connect(uri);
-  const db = client.db(`engine_${crypto.randomUUID().replaceAll('-', '')}`);
-  t.after(async () => { await db.dropDatabase(); await client.close(); await mongo?.stop(); });
+  const db = await atlasDatabase(t);
   await db.collection('projects').insertOne({ project_id: 'demo-app', default_branch: 'main', assumptions });
   return db;
 }
@@ -64,6 +57,7 @@ test('replay confirms only after five slow runs; concurrent engines remain idemp
   const results = await Promise.all([engine.detect('demo-app'), engine.detect('demo-app'), other.detect('demo-app')]);
   assert.equal(results.reduce((sum, result) => sum + result.created, 0), 1);
   assert.equal(await db.collection('findings').countDocuments(), 1);
+  await engine.drainExplanations();
   const latest = await engine.latestFinding();
   assert.equal(latest.has_active_regression, true);
   const finding = latest.finding;
@@ -257,4 +251,58 @@ test('the strict p75 boundary and unrounded medians govern eligibility', async t
   await db.collection('runs').insertMany(fixtures);
   assert.deepEqual(await engine.detect('demo-app'), { created: 0, updated: 0 });
   assert.equal(await db.collection('findings').countDocuments(), 0);
+});
+
+test('provider latency does not block detection and reset/replay cannot receive an old explanation', async t => {
+  const db = await database(t);
+  await commits(db);
+  await db.collection('runs').insertMany([
+    ...Array.from({ length: 10 }, (_, n) => run(n, 70000)),
+    ...Array.from({ length: 5 }, (_, n) => run(n + 10, 270000, sha(2))),
+  ]);
+  const entered = Promise.withResolvers();
+  const release = Promise.withResolvers();
+  const freshUpdate = Promise.withResolvers();
+  const events = [];
+  let requests = 0;
+  const engine = createEngine({ db, emit: (name, data) => {
+    events.push({ name, data });
+    if (name === 'finding.updated' && data.llm?.source === 'llm') freshUpdate.resolve();
+  }, llm: {
+    apiKey: 'controlled-provider-key', timeoutMs: 30000,
+    fetch: async () => {
+      requests++;
+      const version = requests === 1 ? 'old' : 'new';
+      if (requests === 1) { entered.resolve(); await release.promise; }
+      return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: {
+        content: JSON.stringify({ suggested_fix: `${version} experiment`, channel_summary: `${version} observation` }),
+      } }] }) };
+    },
+  } });
+  try {
+    assert.deepEqual(await engine.detect('demo-app'), { created: 1, updated: 0 });
+    await entered.promise;
+    const original = (await engine.latestFinding()).finding;
+    assert.equal(original.llm, null, 'detection must return while the provider is still gated');
+    assert.deepEqual(await engine.detect('demo-app'), { created: 0, updated: 0 });
+    assert.equal(requests, 1);
+    // Model reset/replay's derived-record replacement after source history has
+    // been restored: same finding_id, newly generated MongoDB identity.
+    await db.collection('findings').deleteOne({ finding_id: original.finding_id });
+    assert.equal((await engine.detect('demo-app')).created, 1);
+    await freshUpdate.promise;
+    release.resolve();
+    await engine.drainExplanations();
+    const current = (await engine.latestFinding()).finding;
+    assert.equal(current.finding_id, original.finding_id);
+    assert.equal(current.llm.suggested_fix, 'new experiment');
+    assert.equal(current.culprit_sha, original.culprit_sha);
+    assert.deepEqual(current.confidence, original.confidence);
+    assert.equal(await db.collection('findings').countDocuments(), 1);
+    assert.equal(events.filter(event => event.name === 'finding.created').length, 2);
+    assert.equal(events.filter(event => event.name === 'finding.updated' && event.data.llm?.source === 'llm').length, 1);
+  } finally {
+    release.resolve();
+    await engine.drainExplanations();
+  }
 });

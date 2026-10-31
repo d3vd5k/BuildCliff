@@ -21,6 +21,7 @@ export function scoreConfidence({before, after, suspects, step}) {
   const jump_score = baseline.length && current.length ? clamp(persistenceScore + separationScore + 15 * Math.min(1, baseline.length / 10)) : 0;
 
   let attribution_score = 0;
+  let smallScoreMargin = false;
   if (!suspects.length) {
     add('NO_COMMIT_DATA', 'No commit data between the last good and first slow run', 'negative');
   } else {
@@ -38,6 +39,7 @@ export function scoreConfidence({before, after, suspects, step}) {
         attribution_score += 10;
         add('LARGE_SCORE_MARGIN', `Top suspect leads the runner-up by ${margin} points`, 'positive');
       } else if (margin < 10) {
+        smallScoreMargin = true;
         attribution_score -= 25;
         add('SMALL_SCORE_MARGIN', `Top two suspects score within ${margin} points`, 'negative');
       }
@@ -49,6 +51,8 @@ export function scoreConfidence({before, after, suspects, step}) {
     attribution_score = clamp(attribution_score);
   }
   let score = clamp(jump_score * 0.35 + attribution_score * 0.65);
+  // Strong evidence shared by near-tied candidates does not identify a cause.
+  if (smallScoreMargin) score = Math.min(score, 44);
   // Attribution cannot substitute for an observed, confirmed timing change.
   if (baseline.length < 10 || current.length < 5) score = Math.min(score, 44);
   if (persistent !== current.length) score = Math.min(score, 74);

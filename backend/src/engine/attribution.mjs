@@ -36,7 +36,7 @@ export function rankSuspects(commits, step) {
       // cache config or Docker build file also happens to mention the step.
       if (/(?:^|\/)(?:package(?:-lock)?\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|Cargo\.(?:lock|toml)|Gemfile(?:\.lock)?|poetry\.lock|Pipfile(?:\.lock)?|pyproject\.toml|requirements[^/]*\.txt|go\.(?:mod|sum)|composer\.(?:json|lock))$/.test(path)) category = ['LOCKFILE_CHANGED', 40];
       else if (/(?:^|\/)(?:Dockerfile(?:\.[^/]+)?|[^/]+\.Dockerfile|docker-compose[^/]*\.ya?ml|compose\.ya?ml)$/.test(path)) category = ['DOCKERFILE_CHANGED', 30];
-      else if (/(?:^|\/)(?:[^/]*cache[^/]*)(?:\.[^/]+)?$/i.test(path)) category = ['CACHE_KEY_CHANGED', 30];
+      else if (/(?:^|\/)\.?cache[-_.]key(?:\.[^/]+)?$/i.test(path)) category = ['CACHE_KEY_CHANGED', 30];
       else if (/^(?:\.github\/workflows\/|\.circleci\/)|(?:^|\/)(?:\.gitlab-ci\.ya?ml|Jenkinsfile|azure-pipelines\.ya?ml|buildkite\.ya?ml)$/.test(path)) category = /cache[\s_-]*(?:key|config|path)|(?:restore|save)[\s_-]*cache/i.test(commit.diff_summary ?? '') ? ['CACHE_KEY_CHANGED', 30] : ['CI_CONFIG_CHANGED', 30];
       else if (stepRelated(path, step)) category = ['STEP_RELATED_FILES', 20];
       if (category) {

@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import { MongoClient } from 'mongodb';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { buildDetectionPipeline } from '../src/engine/windows.mjs';
 import { createImpacts } from '../src/engine/impacts.mjs';
 
 // This is a disposable prototype dataset, not A's production/demo seeder.
-// Always start a private MongoDB process; never connect to Atlas or user data.
+// Use Atlas only and isolate all writes in a disposable verification database.
 const START = Date.parse('2026-10-01T00:00:00Z');
 const sha = n => n.toString(16).padStart(40, '0');
 const baseline = { checkout: 8000, install: 70000, build: 95000, test: 120000, deploy: 30000 };
@@ -155,17 +154,33 @@ async function prototypeImpacts(db) {
   console.log('Impact boundaries passed: zero/negative impacts, failed/other-branch runs, concurrent rebuilds, unbuilt commits, incomplete windows, and stale-row removal.');
 }
 
-const mongo = await MongoMemoryServer.create({ binary: { version: '8.0.17' } });
-let client;
+async function main() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri?.trim()) {
+    console.error('Missing MONGODB_URI. Add the Atlas Drivers URI to your local .env. No local database fallback is used.');
+    process.exitCode = 1;
+    return;
+  }
+  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 10_000 });
+  let db;
+  try {
+    await client.connect();
+    db = client.db(`buildcliff_prototype_${crypto.randomUUID().replaceAll('-', '')}`);
+    const build = await db.admin().command({ buildInfo: 1 });
+    console.log(`Step 2 prototype: configured MongoDB ${build.version}; isolated database ${db.databaseName}.`);
+    await prototypeDetector(db);
+    await prototypeImpacts(db);
+    console.log('\\nPASS: both aggregation prototypes verified.');
+  } finally {
+    try { if (db) await db.dropDatabase(); }
+    finally { await client.close(); }
+  }
+}
+
 try {
-  client = await MongoClient.connect(mongo.getUri());
-  const db = client.db('buildcliff_step2_prototype');
-  const build = await db.admin().command({ buildInfo: 1 });
-  console.log(`Step 2 prototype: real MongoDB ${build.version}; isolated disposable database.`);
-  await prototypeDetector(db);
-  await prototypeImpacts(db);
-  console.log('\nPASS: both Step 2 aggregation prototypes verified.');
-} finally {
-  await client?.close();
-  await mongo.stop();
+  await main();
+} catch (error) {
+  process.exitCode = 1;
+  if (error.code === 'ERR_ASSERTION') console.error(error.message);
+  else console.error(`Verification failed (${error.name ?? 'Error'}, code ${error.code ?? 'unknown'}). Check Atlas connectivity and disposable-database permissions.`);
 }

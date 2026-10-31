@@ -4,7 +4,7 @@ import {
 import { breakdown, deltaPct, percentile } from './math.mjs';
 import { rankSuspects } from './attribution.mjs';
 import { scoreConfidence } from './confidence.mjs';
-import { generateExplanation } from './llm.mjs';
+import { createExplanationWorker } from './explanations.mjs';
 import { calculateCost, createCosts } from './costs.mjs';
 import { commitsBetween, createCompare } from './compare.mjs';
 import { createImpacts } from './impacts.mjs';
@@ -21,6 +21,7 @@ export function createEngine({ db, emit = () => {}, llm = {} }) {
   const costs = createCosts({ db, emit });
   const comparison = createCompare({ db });
   const impacts = createImpacts({ db, emit });
+  const explanations = createExplanationWorker({ db, emit, llm });
   const pending = new Map();
   let ready;
 
@@ -62,6 +63,7 @@ export function createEngine({ db, emit = () => {}, llm = {} }) {
   async function detectProject(project_id) {
     await initialize();
     const project = await requireProject(project_id);
+    await explanations.resume(project_id);
     const candidates = await db.collection('runs').aggregate(buildDetectionPipeline({ project_id })).toArray();
     const runs = await db.collection('runs').find({ project_id, status: 'success' })
       .sort({ started_at: 1, run_id: 1 }).toArray();
@@ -106,25 +108,19 @@ export function createEngine({ db, emit = () => {}, llm = {} }) {
         confidence: scoreConfidence({ before, after, suspects, step: candidate.step }),
         cost: calculateCost(delta_ms, runsPerWeek, project.assumptions), llm: null,
       };
-      let inserted;
+      let insertedId = null;
       try {
         const result = await findings.updateOne({ finding_id }, { $setOnInsert: finding }, { upsert: true });
-        inserted = result.upsertedCount === 1;
+        if (result.upsertedCount === 1) insertedId = result.upsertedId;
       } catch (error) {
         if (error.code !== 11000) throw error;
         // Another engine instance won the unique-key upsert.
-        inserted = false;
       }
-      if (!inserted) continue;
+      if (insertedId === null) continue;
       created++;
       await emit('finding.created', finding);
       const topCommit = commits.find(commit => commit.sha === finding.culprit_sha) ?? null;
-      const explanation = await generateExplanation(finding, topCommit, llm);
-      const explained = await findings.findOneAndUpdate(
-        { finding_id }, { $set: { llm: explanation } }, { returnDocument: 'after' },
-      );
-      // A reset may remove a finding while the provider request is in flight.
-      if (explained) await emit('finding.updated', publicFinding(explained));
+      explanations.schedule({ ...finding, _id: insertedId }, topCommit);
     }
 
     const active = await findings.find({ project_id, status: 'active' }).toArray();
@@ -161,8 +157,23 @@ export function createEngine({ db, emit = () => {}, llm = {} }) {
     return next;
   }
 
+  async function drainExplanations() {
+    // A stops accepting ingest before shutdown. Include detections still
+    // running/queued, since they can create more explanation work while draining.
+    let failure = null;
+    while (pending.size) {
+      for (const result of await Promise.allSettled([...pending.values()])) {
+        if (result.status === 'rejected') failure ??= { error: result.reason };
+      }
+    }
+    try { await explanations.drain(); }
+    catch (error) { failure ??= { error }; }
+    if (failure) throw failure.error;
+  }
+
   return {
     detect, listFindings, latestFinding, getFinding,
+    resumeExplanations: explanations.resume, drainExplanations,
     recomputeCosts: costs.recomputeCosts,
     getRunsPerWeek: costs.getRunsPerWeek,
     compare: comparison.compare,

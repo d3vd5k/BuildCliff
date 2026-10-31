@@ -1,6 +1,6 @@
 # BuildCliff Shared Contract (A, B, C)
 
-**contract_version: 1.0**
+**contract_version: 1.3**
 Single source of truth for field names and response shapes. If you need to change anything here, edit this file, bump the version, add a line to the change log at the bottom, and tell the other two before merging.
 
 Owners: **A** = ingest, seed, stream, demo, CLI. **B** = detector, findings, compare, impacts, LLM. **C** = UI.
@@ -137,9 +137,10 @@ One row per dependency bump, showing the step it affected most.
 | `before_ms` | int | Median over the runs before the commit |
 | `after_ms` | int | Median over the runs after the commit |
 | `delta_ms` | int | `after_ms - before_ms` (can be near zero or negative) |
-| `delta_pct` | number | |
+| `delta_pct` | number or null | One decimal; null when the baseline is zero and the after duration is nonzero |
 | `runs_compared` | object `{before, after}` | Run counts used |
-| `finding_id` | string or null | Linked finding if one exists |
+| `compare` | object `{a, b}` | Required run IDs: last successful measured-step baseline run, first successful measured-step after run |
+| `finding_id` | string or null | Linked finding for the measured step on the project's default branch, if one exists |
 | `demo_replay` | bool | |
 | `computed_at` | Date | |
 
@@ -214,7 +215,7 @@ One row per dependency bump, showing the step it affected most.
     "engineer_wait_hours_per_week": 1.94,
     "engineer_cost_usd_per_week": 116.67,
     "runner_cost_usd_per_week": 1.87,
-    "total_cost_usd_per_week": 118.54,
+    "total_cost_usd_per_week": 118.53,
     "recovered_hours_per_week_if_reverted": 3.89,
     "assumptions": {
       "runner_cost_per_min_usd": 0.008,
@@ -245,7 +246,20 @@ One row per dependency bump, showing the step it affected most.
 | `breakdown` | Medians per step. Powers the step breakdown bars and the revert preview. Keys follow the runs' step names. |
 | `cost` | Recomputed by B whenever project assumptions change. |
 | `llm.source` | `"llm"` or `"template"` (fallback). The UI never needs to branch on it, but may show a small label. |
-| `llm` | May be `null` for the first moments after detection, before the LLM step finishes. C must handle `null`. A `finding.updated` stream event fires when it arrives. |
+| `llm` | Null while explanation work is pending. `finding.created` is published before generation; a persisted LLM or template result is published through `finding.updated`. |
+
+New Gateway results must be complete JSON with only `suggested_fix` and
+`channel_summary`, bounded to 1600 and 800 characters respectively. The server
+adds `source` and `generated_at`; the provider cannot set those fields or alter
+suspects, confidence, timings, or costs. Invalid/refused/truncated output,
+missing credentials, provider errors, or the 8000 ms request deadline produce
+the deterministic template. JSON validity does not establish factual accuracy.
+
+Cost calculations retain full precision until each final hours/USD field is
+rounded to two decimals. `total_cost_usd_per_week` is rounded from the sum of
+the unrounded engineer and runner costs; it can differ by one cent from the sum
+of the two separately rounded display values.
+
 
 ### Enumerated codes
 
@@ -460,6 +474,10 @@ When clean: `{ "project_id": "demo-app", "has_active_regression": false, "findin
 - `diff` includes every step, sorted by `delta_ms` descending.
 - `is_suspect` is `false` and `suspect_rank` is `null` when the commit is not a suspect or the comparison is run-to-run with no finding.
 - For `mode: "runs"`, `label` is the run id and `run_ids` has one entry.
+- Single-run mode includes every recorded step duration, including failed and skipped steps. Successful-only timing windows apply to finding mode, not to individual run snapshots.
+- Each side's `total_ms` is the sum of its displayed `steps_ms` values.
+- An absent step contributes `0` on that side. A zero baseline returns `delta_pct: null` when the other duration is nonzero, or `0` when both durations are zero.
+- Reversing a single-run comparison reverses the duration deltas; its commit/dependency list still describes the proven chronological ancestry range.
 
 ### 4.6 Dependency impacts (owner: B)
 
@@ -484,12 +502,27 @@ Sorted by `delta_ms` descending (the biggest slowdown first).
       "delta_ms": 200000,
       "delta_pct": 285.7,
       "runs_compared": { "before": 10, "after": 5 },
+      "compare": { "a": "run_0115", "b": "run_0116" },
       "finding_id": "demo-app:main:install:run_0116"
     }
   ]
 }
 ```
 A row is "near zero" when `abs(delta_ms) < 5000`. C mutes those rows; B does not filter them out.
+
+Rows measure the project's `default_branch`; branches are not combined. Every
+row includes a non-null `compare` target, even if `finding_id` is null. Prefer a
+finding link when present; otherwise open
+`GET /api/compare?project_id=...&branch=<project.default_branch>&a=<row.compare.a>&b=<row.compare.b>`.
+The target is an adjacent measured-run pair, not the full 10/5 median window;
+ordinary timing jitter can make that pair's delta differ from the impact row.
+No incomplete window is reported as a zero-impact measurement. A successful
+empty rebuild returns `computed_at: null`, `count: 0`, and `impacts: []`.
+
+For the v1.2 cutover, rebuild each project's materialized rows with
+`recomputeImpacts(project_id)` before serving the table. Existing rows are
+replaced with the required comparison targets; there is no read-time guessing
+or legacy response shim.
 
 ### 4.7 Projects and assumptions (owner: A)
 
@@ -508,6 +541,9 @@ A row is "near zero" when `abs(delta_ms) < 5000`. C mutes those rows; B does not
 }
 ```
 `runs_per_week` is read-only and derived (the API gets it from B).
+It is the count of all project runs (all statuses and branches) with `started_at`
+in the inclusive interval from now minus 14 days through now, divided by two.
+Older and future-dated runs are excluded.
 
 **`PATCH /api/projects/:project_id/assumptions`**
 
@@ -571,13 +607,28 @@ Server-sent events. Each message is `event: <name>` plus `data: <json>`. A comme
 
 | Function | Owner | Called by | Behavior |
 |---|---|---|---|
-| `detect(project_id)` | B | A, after each accepted run | Runs detection and attribution; upserts findings by `finding_id`; returns `{ created, updated }` |
+| `detect(project_id)` | B | A, after each accepted run | Detects/attributes, persists findings and schedules background explanations without awaiting the provider; returns `{ created, updated }` |
+| `resumeExplanations(project_id?)` | B | A at startup; detection for its project | Queue persisted null explanations; return number scheduled. Omit project to resume the application database. |
+| `drainExplanations()` | B | A during graceful shutdown | Wait for in-flight/queued detection and explanation tasks; reject on unexpected persistence/publication errors. |
 | `recomputeCosts(project_id)` | B | A, after assumptions change | Updates `cost` on active findings |
 | `recomputeImpacts(project_id)` | B | A, after commits and reset | Rebuilds `dependency_impacts` with `$merge`, then emits `impacts.updated` |
 | `getDb()` | A | B | Returns the shared Mongo database handle |
 | `emit(eventName, data)` | A | B | Publishes to the SSE stream |
 
 `detect` must be safe to call repeatedly and concurrently. Replay calls it five times about 1.5 seconds apart, and the finding must only appear after the fifth slow run.
+
+Explanation work is process-local and deduplicated across factories sharing
+the same Db handle. Conditional writes use the original Mongo `_id` and require
+`llm: null`, so late responses cannot overwrite a reset/recreated finding or a
+completed result. Only pending/null work resumes; completed templates and LLM
+text are not automatically regenerated when credentials or model change.
+
+At startup, resume pending work after connecting the database. On shutdown,
+stop accepting ingest before draining, then close MongoDB. A process crash can
+leave null work for the next startup/detection; this is not a durable broker or
+an exactly-once provider-billing guarantee across processes. A serverless host
+must retain the work using its execution lifecycle rather than terminating
+immediately after an ingest response.
 
 ---
 
@@ -603,3 +654,6 @@ B and A write these directly from the examples above so C can build immediately.
 | Version | Date | Change | By |
 |---|---|---|---|
 | 1.0 | 2026-10-31 | Initial contract | A, B, C |
+| 1.1 | 2026-10-31 | Correct full-precision cost total; clarify recent-run frequency and comparison status/zero-baseline/direction semantics. No response fields changed. | B |
+| 1.2 | 2026-10-31 | Add required impact `compare: {a, b}` targets; restrict finding links to the measured step/default branch; clarify zero-baseline and empty-result semantics. | B |
+| 1.3 | 2026-10-31 | Move explanations to background work; add resume/drain hooks and reset-safe persistence; specify Gateway GPT-5 nano request/fallback boundaries. Finding response fields unchanged. | B |
