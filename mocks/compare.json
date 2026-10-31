@@ -3,90 +3,6 @@
   "project_id": "demo-app",
   "a": {
     "label": "Typical before (10 runs)",
-<<<<<<< HEAD
-    "run_ids": [
-      "run_0106",
-      "run_0107",
-      "run_0108",
-      "run_0109",
-      "run_0110",
-      "run_0111",
-      "run_0112",
-      "run_0113",
-      "run_0114",
-      "run_0115"
-    ],
-    "total_ms": 323000,
-    "steps_ms": {
-      "checkout": 8000,
-      "install": 70000,
-      "build": 95000,
-      "test": 120000,
-      "deploy": 30000
-    }
-  },
-  "b": {
-    "label": "Typical after (5 runs)",
-    "run_ids": [
-      "run_0116",
-      "run_0117",
-      "run_0118",
-      "run_0119",
-      "run_0120"
-    ],
-    "total_ms": 525100,
-    "steps_ms": {
-      "checkout": 8100,
-      "install": 270000,
-      "build": 96000,
-      "test": 121000,
-      "deploy": 30000
-    }
-  },
-  "diff": [
-    {
-      "step": "install",
-      "a_ms": 70000,
-      "b_ms": 270000,
-      "delta_ms": 200000,
-      "delta_pct": 285.7
-    },
-    {
-      "step": "build",
-      "a_ms": 95000,
-      "b_ms": 96000,
-      "delta_ms": 1000,
-      "delta_pct": 1.1
-    },
-    {
-      "step": "test",
-      "a_ms": 120000,
-      "b_ms": 121000,
-      "delta_ms": 1000,
-      "delta_pct": 0.8
-    },
-    {
-      "step": "checkout",
-      "a_ms": 8000,
-      "b_ms": 8100,
-      "delta_ms": 100,
-      "delta_pct": 1.3
-    },
-    {
-      "step": "deploy",
-      "a_ms": 30000,
-      "b_ms": 30000,
-      "delta_ms": 0,
-      "delta_pct": 0
-    }
-  ],
-  "total": {
-    "a_ms": 323000,
-    "b_ms": 525100,
-    "delta_ms": 202100,
-    "delta_pct": 62.6
-  },
-=======
     "run_ids": ["run_0106", "run_0107"],
     "total_ms": 323000,
     "steps_ms": { "checkout": 8000, "install": 70000, "build": 95000, "test": 120000, "deploy": 30000 }
@@ -105,7 +21,6 @@
     { "step": "deploy",   "a_ms": 30000, "b_ms": 30000,  "delta_ms": 0,      "delta_pct": 0.0 }
   ],
   "total": { "a_ms": 323000, "b_ms": 525000, "delta_ms": 202000, "delta_pct": 62.5 },
->>>>>>> origin/aayush/task1
   "commits_between": [
     {
       "sha": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6",
@@ -117,15 +32,6 @@
     }
   ],
   "dependency_changes": [
-<<<<<<< HEAD
-    {
-      "name": "puppeteer",
-      "from": "21.0.0",
-      "to": "22.0.0",
-      "commit_sha": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6"
-    }
-=======
     { "name": "puppeteer", "from": "21.0.0", "to": "22.0.0", "commit_sha": "a3f9c1d84be27f5c0d6e91a2b7c3f45e8d09a1b6" }
->>>>>>> origin/aayush/task1
   ]
 }
