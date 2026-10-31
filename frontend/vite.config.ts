@@ -14,11 +14,24 @@ export default defineConfig({
       '/api': {
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:4000',
         changeOrigin: true,
-        // Ensure SSE stream is not buffered
+        // Ensure SSE stream is not buffered and handle connection drops gracefully
         configure: (proxy) => {
           proxy.on('proxyReq', (_proxyReq, req) => {
             if (req.url?.includes('/stream')) {
               req.socket.setKeepAlive(true);
+            }
+          });
+          proxy.on('error', (_err, _req, res) => {
+            if (res && 'writeHead' in res && !(res as any).headersSent) {
+              (res as any).writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(
+                JSON.stringify({
+                  error: {
+                    code: 'BACKEND_OFFLINE',
+                    message: 'Backend server on :4000 is not reachable. Toggle to MODE: MOCK or start backend.',
+                  },
+                })
+              );
             }
           });
         },
