@@ -1,0 +1,18 @@
+{
+  "name": "buildcliff",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["shared", "backend", "cli"],
+  "scripts": {
+    "seed": "node backend/src/seed/index.js",
+    "schema": "node backend/src/db/schema.js",
+    "start": "node backend/src/server.js",
+    "dev": "node --watch backend/src/server.js",
+    "cli": "node cli/src/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

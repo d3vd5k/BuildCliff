@@ -1,0 +1,15 @@
+{
+  "name": "@buildcliff/cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "buildcliff": "src/index.js"
+  },
+  "scripts": {
+    "why-slow": "node src/index.js why-slow"
+  },
+  "dependencies": {
+    "@buildcliff/shared": "*"
+  }
+}
