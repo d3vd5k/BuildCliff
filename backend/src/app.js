@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { healthRouter } from './routes/health.js';
 import { ingestRouter } from './routes/ingest.js';
+import { runsRouter } from './routes/runs.js';
+import { projectsRouter } from './routes/projects.js';
 
 export function createApp() {
   const app = express();
@@ -11,6 +13,8 @@ export function createApp() {
   // All endpoints live under /api (contract section 0)
   app.use('/api/health', healthRouter);
   app.use('/api/ingest', ingestRouter);
+  app.use('/api/runs', runsRouter);
+  app.use('/api/projects', projectsRouter);
 
   // Centralized error shape (contract section 4.1)
   app.use((req, res) => {
